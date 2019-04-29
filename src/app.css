@@ -1,0 +1,26 @@
+.app__root {
+  width: 80%;
+  margin: 1em auto;
+}
+.app__title {
+  display: flex;
+  align-items: center;
+
+}
+.app__body .action {
+  margin: 1em 0;
+}
+.app__body .action p {
+  margin-top: 1em;
+}
+.progress-dialog .progress-content {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  justify-content: center;
+}
+
+.progress-dialog .progress__errors {
+  margin-top: 1em;
+  text-align: left;
+}
