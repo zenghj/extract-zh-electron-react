@@ -16,55 +16,6 @@ const fsPromises = {
   copyFile: util.promisify(fs.copyFile),
 };
 
-// const jsFileSuffix = '.js';
-// async function collectJSFiles({ include, exclude }) {
-//   let jsFiles = [];
-//   const excludes = Array.isArray(exclude) ? exclude : typeof exclude === 'string' ? [exclude] : [];
-//   if (typeof include === 'string') {
-//     const dir = include;
-//     if (dir) {
-//       const names = await fsPromises.readdir(dir);
-//       const allStats = await Promise.all(
-//         names.map(name =>
-//           // console.log(name)
-//           fsPromises.stat(path.join(dir, name)),
-//         ),
-//       );
-//       for (let idx = 0; idx < allStats.length; idx++) {
-//         const stats = allStats[idx];
-//         const name = names[idx];
-//         const curPath = path.join(dir, name);
-//         if (stats.isDirectory()) {
-//           const subFiles = await collectJSFiles({
-//             include: curPath,
-//             exclude: excludes,
-//           });
-//           jsFiles = jsFiles.concat(subFiles);
-//         } else if (name.endsWith(jsFileSuffix) && !name.endsWith('.test.js')) {
-//           // console.log(curPath)
-//           jsFiles.push(curPath);
-//         }
-//       }
-//       excludes.forEach((exclude) => {
-//         jsFiles = jsFiles.filter(path => path.indexOf(exclude) === -1);
-//       });
-//       return jsFiles;
-//     }
-//   } else if (Array.isArray(include) && include.length > 0) {
-//     const paths = await Promise.all(
-//       include.map(subInclude =>
-//         collectJSFiles({
-//           include: subInclude,
-//           exclude: excludes,
-//         }),
-//       ),
-//     );
-//     return paths.reduce((sum = [], item = []) => [...sum, ...item], jsFiles);
-//   } else {
-//     return [];
-//   }
-// }
-
 function toArray(ele) {
   if (Array.isArray(ele)) {
     return ele;
@@ -74,8 +25,7 @@ function toArray(ele) {
   return [];
 }
 
-
-async function collectFiles({ include, exclude, suffixs = ['.js', 'jsx'], blackSuffixs = ['.test.js'] }) {
+async function collectFiles({ include, exclude, suffixs = ['.js', '.jsx'], blackSuffixs = ['.test.js'] }) {
   const fileSet = new Set();
   const excludes = toArray(exclude);
   let includes = toArray(include);
@@ -94,19 +44,10 @@ async function collectFiles({ include, exclude, suffixs = ['.js', 'jsx'], blackS
       let subFiles = await fsPromises.readdir(filepath);
       subFiles = subFiles.map(subfile => path.join(filepath, subfile));
       await batchAsyncTask(collect, subFiles, 10);
-      // for (const file of subFiles) {
-      //   await collect(file);
-      // }
     }
   }
 
   await batchAsyncTask(collect, includes, 2);
-  // for (const item of includes) {
-  //   await collect(item);
-  // }
-  // console.log([...fileSet]);
-  // let test = await collectJSFiles(...([].slice.call(arguments)))
-  // console.log('test', test)
   return [...fileSet];
 }
 
@@ -129,8 +70,30 @@ function unique(arr = [], prop) {
   }
   return arr;
 }
+
+function postNormalizeText(text) {
+  const result = text.replace(/(^[\s\n]+)|([\s\n]+$)/g, ''); // TODO 结尾的标点符号不需要处理掉吧
+  // result = result.replace(/[?？:：!！]+$/g, '');
+  return result;
+}
+
+function keyValueReverse(map) {
+  assession(map, 'Object', 'map should be an object');
+  const reversed = {};
+  Object.keys(map).forEach((key) => {
+    const value = map[key];
+    if (!reversed[value]) {
+      reversed[value] = key;
+    } else {
+      throw new Error(`has duplicate value of ${value}`);
+    }
+  });
+  return reversed;
+}
 module.exports = {
   fsPromises,
   collectFiles,
   unique,
+  postNormalizeText,
+  keyValueReverse,
 };

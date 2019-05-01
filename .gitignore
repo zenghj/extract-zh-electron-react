@@ -1,3 +1,5 @@
 node_modules
 out
 .eslintcache
+src/core/extractZh/src-extract-source
+src/core/extractZh/tmp

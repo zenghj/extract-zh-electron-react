@@ -5,19 +5,13 @@ const {CHANNELS, PROGRESS_STATUS, WORKER_MSG_TYPE} = require('./constant');
 const pkgJson = require('../package.json');
 import { Typography, Steps, Button, Tag, Icon, Modal, Progress, List } from 'antd';
 
-const myExtractWorker = new Worker('./extractZh/index.js');
+const myExtractWorker = new Worker('./core/extractZh/index.js');
 // TODO 提供中断任务的操作
 // function getExtractWorker() {
 //   let ww = myExtractWorker ? myExtractWorker : new Worker('./extractZh/index.js');
 //   return ww
 // }
 
-// const Step = Steps.Step;
-
-// import {selectDirectory} from './renderer';
-// const StyledRoot = styled.div`
-//   margin: 1em
-// `
 const initProgressState = {
   progressDialogTitle: '提取中...',
   progressDialogVisible: false,
@@ -29,9 +23,9 @@ const initProgressState = {
 }
 export default class App extends React.Component {
   state = {
-    srcDirs: [],
+    srcDirs: ['/Users/julianzeng/Desktop/git/fed/lop/Project/extract-zh-electron-react/src/core/extractZh/src-extract-source/demo-file.js'],
     srcExcludeDirs: [],
-    outputDir: '',
+    outputDir: '/Users/julianzeng/Desktop/tmp',
     ...initProgressState,
   }
   UNSAFE_componentWillMount() {
@@ -46,28 +40,7 @@ export default class App extends React.Component {
         this.setState(update)
       }
     });
-    // ipcRenderer.on(CHANNELS.extractComplete, (event, result) => {
-    //   console.log(result);
-    //   // alert('提取成功');
-    // });
-    // ipcRenderer.on(CHANNELS.extractFail, (event, error) => {
-    //   console.error('CHANNELS.extractFail', error);
-    //   // alert('提取失败');
-    // });
-    // ipcRenderer.on(CHANNELS.progressInfo, (event, info) => {
-    //   console.log('CHANNELS.progressInfo', info)
-    //   const update = {}
-    //   if (info.status === PROGRESS_STATUS.fail) {
-    //     update.progressStatus = 'exception'
-    //     update.progressErrorMsg = info.error
-    //     console.error(info.stack)
-    //   } else {
-    //     Object.assign(update, {
-    //       progressPercent: info.percent,
-    //     })
-    //   }
-    //   this.setState(update)
-    // })
+   
     myExtractWorker.onmessage = e => {
       let data = e.data || {};
       if (data.type === WORKER_MSG_TYPE.progressInfo) {
@@ -138,9 +111,6 @@ export default class App extends React.Component {
           outputPath: this.state.outputDir,
         }
       })
-      // setTimeout(() => {
-      //   ipcRenderer.send(CHANNELS.extractZh, [this.state.srcDirs, this.state.outputDir]);
-      // }, 1000);
     })
   }
   deleteSrcDir = (key, item) => e => {
@@ -173,11 +143,6 @@ export default class App extends React.Component {
         </Typography.Title>
       </header>
       <section className="app__body">
-        {/* <Steps current={0}>
-          <Step title="选择源码所在的目录" description="This is a description." />
-          <Step title="In Progress" description="This is a description." />
-          <Step title="Waiting" description="This is a description." />
-        </Steps> */}
         <div className="action">
           <Button type="primary" onClick={this.handleSelectDir('srcDirs')}>1. 选择源码所在的目录</Button>
           <p>需要提取的源码目录：</p>
@@ -236,7 +201,6 @@ export default class App extends React.Component {
           </Modal>
         </div>
       </section>
- 
     </div>);
   }
 }

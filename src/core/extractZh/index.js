@@ -4,15 +4,14 @@
  * TODO 2. 如何终止一次很费时的提取操作
  */
 
-const fs = require('fs');
 const path = require('path');
-const { collectFiles, unique, fsPromises } = require('./utils/helper');
-const extractZh = require('./utils/extract-zh');
-const assession = require('./utils/assession');
-const { createXlsxFile } = require('./utils/xlsx');
+const { collectFiles, unique, fsPromises } = require('../utils/helper');
+const extractZh = require('../utils/extract-zh');
+const assession = require('../utils/assession');
+const { createXlsxFile } = require('../utils/xlsx');
 // const { getMainWindow } = require('../index');
-const { CHANNELS, PROGRESS_STATUS, WORKER_MSG_TYPE } = require('../constant');
-const { batchAsyncTask } = require('./utils/async-utils');
+const { PROGRESS_STATUS, WORKER_MSG_TYPE } = require('../../constant');
+const { batchAsyncTask } = require('../utils/async-utils');
 
 /* eslint-disable */
 
@@ -29,10 +28,12 @@ function generateXlsx(texts, outputFilePath) {
   return createXlsxFile({
     filepath: outputFilePath,
     columns: [
+      { header: 'key', key: 'key', width: 10 },
       { header: '中文', key: 'Chinese', width: 50 },
       { header: '英文', key: 'English', width: 50 },
     ],
-    data: texts.map(item => ({
+    data: texts.map((item, index) => ({
+      key: `key_${index}`,
       Chinese: item,
       English: '',
     })),
@@ -114,22 +115,7 @@ async function extract({ include, exclude, outputPath }) {
     let files = jsFilePaths.map(filepath => ({path: filepath}));
     let batchArgsList = files.map(file => ([file.path, file]));
     await batchAsyncTask(extractFile, batchArgsList, 10);
-    // const files = jsFilePaths.map(filepath => ({
-    //   path: filepath,
-    //   code: fs.readFileSync(filepath, {
-    //     encoding: 'utf-8',
-    //   }),
-    // }));
-    // files.forEach((item, index) => {
-    //   Object.assign(item, {
-    //     zhNodes: extractZh(item.code),
-    //   });
-    //   handleProgress({
-    //     total: files.length,
-    //     current: index + 1,
-    //     status: PROGRESS_STATUS.normal,
-    //   });
-    // });
+
     console.log(files)
     let texts = files.reduce((sum, item) => {
       const zhCnVals = item.zhNodes.map(node => node.value);

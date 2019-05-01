@@ -7,6 +7,12 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Launch writeBack",
+      "program": "${workspaceFolder}/src/core/writeBack/index.js"
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Electron Main",
       "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-forge-vscode-nix",
       "windows": {
