@@ -71,8 +71,8 @@ app.on('activate', () => {
 //     properties: ['openDirectory'],
 //   });
 // };
-ipcMain.on(CHANNELS.openFolder, (event, key) => {
-  console.log('ipcMain openFolder', key);
+ipcMain.on(CHANNELS.openFolder, (event, key, options = {}) => {
+  console.log('ipcMain openFolder', arguments);
   function respondWithPath(paths) {
     event.sender.send(CHANNELS.folderData, key, paths);
   }
@@ -80,6 +80,7 @@ ipcMain.on(CHANNELS.openFolder, (event, key) => {
     mainWindow,
     {
       properties: ['openFile', 'openDirectory', 'multiSelections'],
+      ...options,
     },
     paths => respondWithPath(paths),
   );

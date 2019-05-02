@@ -59,10 +59,12 @@
     "electron-squirrel-startup": "^1.0.0",
     "eslint-config-standard-react": "^7.0.2",
     "exceljs": "^1.9.1",
+    "prop-types": "^15.7.2",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "react-hot-loader": "^3.0.0-beta.6",
-    "styled-components": "^4.2.0"
+    "react-router-dom": "^5.0.0",
+    "shelljs": "^0.8.3"
   },
   "devDependencies": {
     "babel-plugin-transform-async-to-generator": "^6.24.1",

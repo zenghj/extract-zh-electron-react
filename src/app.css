@@ -1,17 +1,38 @@
-.app__root {
+body {
+  overflow: scroll!important;
+}
+.app {
+  min-height: 100vh;
+}
+.app__menu {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 200px;
+  z-index: 10;
+}
+.app__content {
+  margin-left: 200px;
+  padding: 1.5em;
+}
+
+
+
+.home {
   width: 80%;
   min-width: 600px;
   margin: 1em auto;
 }
-.app__title {
+.title {
   display: flex;
   align-items: center;
-
+  margin-bottom: 1em;
 }
-.app__body .action {
+.body .action {
   margin: 1em 0;
 }
-.app__body .action p {
+.body .action p {
   margin-top: 1em;
 }
 .progress-dialog .progress-content {

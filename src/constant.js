@@ -11,11 +11,14 @@ const PROGRESS_STATUS = {
   active: 'active',
   exception: 'exception',
   success: 'success',
+  startWrite: 'startWrite',
+  copying: 'copying',
 };
 
 const WORKER_MSG_TYPE = {
   extract: 'extract',
   progressInfo: 'progressInfo',
+  writeBack: 'writeBack',
 };
 
 module.exports = {

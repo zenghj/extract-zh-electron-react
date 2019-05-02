@@ -13,7 +13,7 @@ function extractZh(code) {
     sourceType: 'module',
     plugins: ['classProperties', 'jsx'],
   });
-  console.log(JSON.stringify(ast));
+  // console.log(JSON.stringify(ast));
   const zhNodes = [];
   const zhsMap = {}; // map去重; 这里只是去掉了单个文件中重复的
   traverse(ast, {

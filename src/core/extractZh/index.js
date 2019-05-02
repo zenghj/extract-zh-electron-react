@@ -29,13 +29,13 @@ function generateXlsx(texts, outputFilePath) {
     filepath: outputFilePath,
     columns: [
       { header: 'key', key: 'key', width: 10 },
-      { header: '中文', key: 'Chinese', width: 50 },
-      { header: '英文', key: 'English', width: 50 },
+      { header: 'zh-cn', key: 'zh-cn', width: 50 },
+      { header: 'en', key: 'en', width: 50 },
     ],
     data: texts.map((item, index) => ({
       key: `key_${index}`,
-      Chinese: item,
-      English: '',
+      'zh-cn': item,
+      'en': 'translations...',
     })),
   });
 }

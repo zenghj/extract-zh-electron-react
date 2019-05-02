@@ -14,6 +14,7 @@ const fsPromises = {
   stat: util.promisify(fs.stat),
   writeFile: util.promisify(fs.writeFile),
   copyFile: util.promisify(fs.copyFile),
+  exists: util.promisify(fs.exists),
 };
 
 function toArray(ele) {

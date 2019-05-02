@@ -6,6 +6,8 @@ const generate = require('@babel/generator').default;
 const babelTypes = require('babel-types');
 const path = require('path');
 const assession = require('../utils/assession');
+const { PROGRESS_STATUS, WORKER_MSG_TYPE } = require('../../constant');
+
 const resolve = (relative) => path.resolve(__dirname, relative);
 const AST_NODE_TYPES = {
   JSXText: 'JSXText',
@@ -16,9 +18,42 @@ const AST_NODE_TYPES = {
   TemplateElement: 'TemplateElement',
 };
 
-module.exports = async function writeBack(filePath, dirctionary, globalI18nFnName) {
-  const exceptions = [];
+module.exports = async function writeBack({ filePath, dirctionary, globalI18nFnName, options }) {
+  assession(options, 'Object', 'options should be an object');
+  assession(options.total, 'Number', 'options.total should be number');
 
+  const exceptions = [];
+  const noKeyVals = [];
+  function handleProgress({ status = PROGRESS_STATUS.normal, error, ...rest }) {
+    // eslint-disable-next-line no-plusplus
+    options.handledCount++;
+    if (status === PROGRESS_STATUS.exception) {
+      options.errors.push(error);
+      // eslint-disable-next-line no-undef
+      // self.postMessage({
+      //   type: WORKER_MSG_TYPE.progressInfo,
+      //   data: {
+      //     status,
+      //     ...rest,
+      //   },
+      // });
+    } else {
+      // eslint-disable-next-line no-plusplus
+      options.successCount++;
+      options.done = options.handledCount === options.total;
+      options.percent = Math.floor((options.successCount * 100) / options.total);
+      // eslint-disable-next-line no-undef
+      self.postMessage({
+        type: WORKER_MSG_TYPE.progressInfo,
+        data: {
+          status: (options.percent === 100 && options.errors.length === 0) ? PROGRESS_STATUS.success : status,
+          percent: options.percent,
+          done: options.done,
+          ...rest,
+        },
+      });
+    }
+  }
   function writeJSXText(path, key, nodeVal) {
     const node = path.node;
     const fnStr = `{${globalI18nFnName}('${key}')}`;
@@ -118,57 +153,73 @@ module.exports = async function writeBack(filePath, dirctionary, globalI18nFnNam
     // path.replaceWith(babelTypes.templateElement(babelTypes.identifier(str)));
   }
 
-  const code = await fsPromises.readFile(filePath, {
-    encoding: 'utf-8',
-  });
-  const ast = babylon.parse(code, {
-    sourceType: 'module',
-    plugins: ['classProperties', 'jsx'],
-  });
-  // console.log(JSON.stringify(ast))
-  const noKeyVals = [];
-  traverse(ast, {
-    enter(path) {
-      const node = path.node;
-      let nodeVal = path.node.value;
-      // let originNodeVal = nodeVal;
-      const zhReg = /[\u4e00-\u9fa5]/;
-      if (nodeVal && typeof nodeVal === 'string') {
-        if (zhReg.test(nodeVal)) {
-          nodeVal = postNormalizeText(nodeVal);
-          const key = dirctionary[nodeVal];
-          if (key) {
-            if (node.type === AST_NODE_TYPES.JSXText) {
-              writeJSXText(path, key, nodeVal);
-            } else if (node.type === AST_NODE_TYPES.StringLiteral) {
-              writeStringLiteral(path, key, nodeVal);
-            } else {
-              console.error('unhandled node.type', node.type);
+  try {
+    const code = await fsPromises.readFile(filePath, {
+      encoding: 'utf-8',
+    });
+    const ast = babylon.parse(code, {
+      sourceType: 'module',
+      plugins: ['classProperties', 'jsx'],
+    });
+    // console.log(JSON.stringify(ast))
+    traverse(ast, {
+      enter(path) {
+        const node = path.node;
+        let nodeVal = path.node.value;
+        // let originNodeVal = nodeVal;
+        const zhReg = /[\u4e00-\u9fa5]/;
+        if (nodeVal && typeof nodeVal === 'string') {
+          if (zhReg.test(nodeVal)) {
+            nodeVal = postNormalizeText(nodeVal);
+            const key = dirctionary[nodeVal];
+            if (key) {
+              if (node.type === AST_NODE_TYPES.JSXText) {
+                writeJSXText(path, key, nodeVal);
+              } else if (node.type === AST_NODE_TYPES.StringLiteral) {
+                writeStringLiteral(path, key, nodeVal);
+              } else {
+                console.error('unhandled node.type', node.type);
+              }
+            } else if (nodeVal) {
+              noKeyVals.push(nodeVal);
+              // console.log('此key找不到', nodeVal);
             }
-          } else if (nodeVal) {
-            noKeyVals.push(nodeVal);
-            // console.log('此key找不到', nodeVal);
+          }
+        } else if (node.type === AST_NODE_TYPES.TemplateElement) {
+          nodeVal = node.value.raw;
+          if (zhReg.test(nodeVal)) {
+            nodeVal = postNormalizeText(nodeVal);
+            const key = dirctionary[nodeVal];
+            if (key) {
+              writeTemplateElement(path, key, nodeVal);
+            } else if (nodeVal) {
+              noKeyVals.push(nodeVal);
+            }
           }
         }
-      } else if (node.type === AST_NODE_TYPES.TemplateElement) {
-        nodeVal = postNormalizeText(node.value.raw);
-        const key = dirctionary[nodeVal];
-        if (key) {
-          writeTemplateElement(path, key, nodeVal);
-        } else if (nodeVal) {
-          noKeyVals.push(nodeVal);
-        }
-      }
-    },
-  });
-  const generated = generate(ast, {
-    comments: true,
-  }, code);
-  // console.log(generated.code);
-  fsPromises.writeFile(resolve('../extractZh/src-extract-source/demo.file-modify.js'), generated.code);
-  fsPromises.writeFile(resolve('../extractZh/src-extract-source/ast.json'), JSON.stringify(ast));
+      },
+    });
+    const generated = generate(ast, {
+      comments: true,
+      // retainLines: true,
+    }, code);
+    fsPromises.writeFile(filePath, `${generated.code}\n`);
+    // console.log(generated.code);
+    // fsPromises.writeFile(resolve('../extractZh/src-extract-source/demo.file-modify.js'), generated.code);
+    // fsPromises.writeFile(resolve('../extractZh/src-extract-source/ast.json'), JSON.stringify(ast));
+    handleProgress({
+      status: PROGRESS_STATUS.normal,
+      error: null,
+    });
+  } catch (err) {
+    handleProgress({
+      status: PROGRESS_STATUS.exception,
+      error: err,
+    });
+  }
   return {
     noKeyVals,
     exceptions,
+    filePath,
   };
 };

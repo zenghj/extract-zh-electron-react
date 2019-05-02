@@ -66,7 +66,7 @@ function validateRows(rows, sheetname) {
 function getRowsDataFromSheet(sheet) {
   assession(sheet, 'Object', 'sheet should be an object');
   const sheetValues = sheet.getSheetValues();
-  return sheetValues.slice(2); // 从index为2开始才是正式的翻译序列
+  return sheetValues.slice(1); // 从index为2开始才是正式的翻译序列
 }
 /**
  * @param {*} param0
@@ -76,23 +76,33 @@ async function readRowsDataFromXlsx({ filepath, sheetName }) {
   assession(filepath, 'String', 'filepath should be a string');
   const workbook = new Excel.Workbook();
   await workbook.xlsx.readFile(filepath);
-  let rows = [];
+  // let rows = [];
+  const data = {
+    rows: [],
+    row1: null,
+  };
   if (sheetName) {
     const sheet = workbook.getWorksheet(sheetName);
     if (sheet) {
-      rows = getRowsDataFromSheet(sheet);
-      validateRows(rows, sheetName);
+      data.rows = getRowsDataFromSheet(sheet);
+      data.row1 = data.rows.shift();
+      validateRows(data.rows, sheetName);
     } else {
       throw new Error(`can find sheetname ${sheetName}`);
     }
   } else {
     workbook.eachSheet((worksheet, sheetId) => {
       const indexedRows = getRowsDataFromSheet(worksheet);
+      const row1 = indexedRows.shift();
       validateRows(indexedRows, sheetId);
-      rows.push(...indexedRows);
+      if (!data.row1) {
+        data.row1 = row1;
+      }
+      data.rows.push(...indexedRows);
     });
   }
-  return rows;
+  data.row1 = data.row1 || [];
+  return data;
 }
 
 /**
@@ -112,13 +122,28 @@ function getLanguageDicFromRows(rows) {
   return dic;
 }
 
-async function getLanguageDicFromXlsx({ filepath, sheetName }) {
+async function getInfoFromXlsx({ filepath, sheetName }) {
   assession(filepath, 'String', 'filepath should be a string');
-  const rows = await readRowsDataFromXlsx({ filepath, sheetName });
-  return keyValueReverse(getLanguageDicFromRows(rows));
+  const { rows, row1 } = await readRowsDataFromXlsx({ filepath, sheetName });
+  const dic = keyValueReverse(getLanguageDicFromRows(rows));
+  const locateJson = {};
+  row1.forEach((locateKey, index) => {
+    if (index <= 1) return;
+    if (locateKey && locateKey.trim()) {
+      const locate = {};
+      rows.forEach((row) => {
+        locate[row[1]] = row[index];
+      });
+      locateJson[locateKey] = locate;
+    }
+  });
+  return {
+    dic,
+    locateJson,
+  };
 }
 module.exports = {
   createXlsxFile,
   readRowsDataFromXlsx,
-  getLanguageDicFromXlsx,
+  getInfoFromXlsx,
 };
